@@ -1,7 +1,5 @@
 
 
-
-
 export abstract class Condition<TFacts> {
   abstract evaluate(facts: TFacts): boolean;
 
@@ -53,16 +51,4 @@ export class NotCondition<TFacts> extends Condition<TFacts> {
     return !this.child.evaluate(facts)
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
