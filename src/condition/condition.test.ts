@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { AndCondition, BaseCondition, NotCondition, OrCondition } from './condition';
+import { AndCondition, PredicateCondition, NotCondition, OrCondition } from './condition';
 import { Direction, Fact, MemberType } from '../utils/testHelpers';
 
 const TestFact = {
@@ -9,11 +9,11 @@ const TestFact = {
   value: 99
 }
 
-const trueCondition = new BaseCondition((facts: Fact) => facts.name === "TestFact");
-const falseCondition = new BaseCondition((facts: Fact) => facts.value > 100);
+const trueCondition = new PredicateCondition((facts: Fact) => facts.name === "TestFact");
+const falseCondition = new PredicateCondition((facts: Fact) => facts.value > 100);
 
-const trueConditionTwo = new BaseCondition((facts: Fact) => facts.direction === Direction.Down);
-const falseConditionTwo = new BaseCondition((facts: Fact) => facts.memberType === MemberType.Free);
+const trueConditionTwo = new PredicateCondition((facts: Fact) => facts.direction === Direction.Down);
+const falseConditionTwo = new PredicateCondition((facts: Fact) => facts.memberType === MemberType.Free);
 
 const trueAndCondition = new AndCondition([trueCondition, trueConditionTwo]);
 const falseAndWithBothFalseConditions = new AndCondition([falseCondition, falseConditionTwo]);
@@ -26,7 +26,7 @@ const falseOrCondition = new OrCondition([falseCondition, falseConditionTwo]);
 const notTrueCondition = new NotCondition(trueCondition);
 const notFalseCondition = new NotCondition(falseCondition);
 
-describe("BaseCondition", () => {
+describe("PredicateCondition", () => {
 
   test("evaluate returns true when condition is met", () => {
     expect(trueCondition.evaluate(TestFact)).toBeTruthy()

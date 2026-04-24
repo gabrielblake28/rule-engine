@@ -9,7 +9,7 @@ export abstract class Condition<TFacts> {
 }
 
 
-export class BaseCondition<TFacts> extends Condition<TFacts> {
+export class PredicateCondition<TFacts> extends Condition<TFacts> {
 
   constructor(private fn: (facts: TFacts) => boolean) {
     super()
