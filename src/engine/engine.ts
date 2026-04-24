@@ -1,11 +1,21 @@
 import { Rule } from "../rule/rule";
 
 
-export type Decision = {
-  result: boolean,
+interface Pass {
+  kind: "pass",
+  passed: string[],
+  // trace: Trace[]
+}
+
+interface Fail {
+  kind: "fail",
   passed: string[],
   failed: string[],
+  // trace: Trace[],
 }
+
+
+export type Decision = Pass | Fail
 
 
 export class RuleEngine<TFacts> {
@@ -27,9 +37,11 @@ export class RuleEngine<TFacts> {
       passed.push(rule.name)
     }
 
-
-    const result: Decision = {
-      result: noRulesFailed,
+    const result: Decision = failed.length > 0 ? {
+      kind: "pass",
+      passed
+    } : {
+      kind: "fail",
       passed,
       failed
     }
