@@ -25,12 +25,9 @@ export class RuleEngine<TFacts> {
     const passed: string[] = [];
     const failed: string[] = [];
 
-    let noRulesFailed = true;
-
     for (const rule of rules) {
       if (!rule.condition.evaluate(facts)) {
         failed.push(rule.name)
-        noRulesFailed = false;
         continue;
       }
 
@@ -46,8 +43,8 @@ export class RuleEngine<TFacts> {
       failed
     }
 
-
     return result;
   }
 
 }
+
