@@ -1,55 +1,52 @@
 import { Trace } from "../condition/condition";
 import { Rule } from "../rule/rule";
-import { Decision, Kind, Options, Strategy } from "./engine.types";
+import { Decision, DecisionWithTrace, Kind, Options, Strategy } from "./engine.types";
 
 export class RuleEngine<TFacts> {
 
   evaluate(facts: TFacts, rules: Rule<TFacts>[], opts?: Options): Decision {
+    const { passed, failed } = this.run(facts, rules, opts, false);
+    return this.toDecision(passed, failed, opts?.strategy);
+  }
 
+  evaluateWithTrace(facts: TFacts, rules: Rule<TFacts>[], opts?: Options): DecisionWithTrace {
+    const { passed, failed, traces } = this.run(facts, rules, opts, true);
+    return { ...this.toDecision(passed, failed, opts?.strategy), trace: traces };
+  }
+
+  private run(facts: TFacts, rules: Rule<TFacts>[], opts: Options | undefined, trace: boolean) {
     const passed: string[] = [];
     const failed: string[] = [];
     const traces: Trace[] = [];
 
     for (const rule of rules) {
-
-      const result = opts?.trace
-        ? rule.condition.explain(facts)
-        : { result: rule.condition.evaluate(facts) };
-
-      if (opts?.trace) traces.push(result as Trace);
-
-      if (!result.result) {
-        failed.push(rule.name)
+      let ok: boolean;
+      if (trace) {
+        const tResult = rule.condition.explain(facts);
+        traces.push(tResult);
+        ok = tResult.result;
       } else {
-        passed.push(rule.name)
+        ok = rule.condition.evaluate(facts);
       }
 
-      if (!opts?.strategy || opts?.strategy === "all") continue;
+      if (ok) passed.push(rule.name);
+      else failed.push(rule.name);
 
+      if (!opts?.strategy || opts.strategy === "all") continue;
       if (this.shouldStop(opts.strategy, passed, failed)) break;
-
     }
 
-    let kind: Kind;
-    if (opts?.strategy === "anyPass") {
-      kind = passed.length > 0 ? Kind.PASS : Kind.FAIL;
-    } else {
-      // all or allPass
-      kind = failed.length === 0 ? Kind.PASS : Kind.FAIL;
-    }
+    return { passed, failed, traces };
+  }
 
-    const result: Decision = kind === Kind.FAIL ? {
-      result: kind,
-      passed,
-      failed,
-      trace: opts?.trace ? traces : undefined
-    } : {
-      result: kind,
-      passed,
-      trace: opts?.trace ? traces : undefined
-    }
+  private toDecision(passed: string[], failed: string[], strat?: Strategy): Decision {
+    const kind: Kind = strat === "anyPass"
+      ? (passed.length > 0 ? Kind.PASS : Kind.FAIL)
+      : (failed.length === 0 ? Kind.PASS : Kind.FAIL);
 
-    return result;
+    return kind === Kind.FAIL
+      ? { result: kind, passed, failed }
+      : { result: kind, passed };
   }
 
   private shouldStop(strat: Strategy, passed: string[], failed: string[]) {
