@@ -2,7 +2,8 @@
 enum NodeKind {
   LEAF = "leaf",
   AND = "and",
-  OR = "or"
+  OR = "or",
+  NOT = "not"
 }
 
 interface LeafTrace {
@@ -25,7 +26,14 @@ interface OrTrace {
   children: Trace[]
 }
 
-export type Trace = LeafTrace | AndTrace | OrTrace;
+interface NotTrace {
+  kind: NodeKind.NOT,
+  label: string,
+  result: boolean,
+  children: Trace
+}
+
+export type Trace = LeafTrace | AndTrace | OrTrace | NotTrace;
 
 
 export abstract class Condition<TFacts> {
@@ -86,7 +94,6 @@ export class AndCondition<TFacts> extends Condition<TFacts> {
 
     return { kind: NodeKind.AND, label: this.label, result, children: traces }
   }
-
 }
 
 
@@ -108,7 +115,7 @@ export class OrCondition<TFacts> extends Condition<TFacts> {
       const childTrace = child.explain(facts);
       traces.push(childTrace);
 
-      if (!childTrace.result) {
+      if (childTrace.result) {
         result = true
         break; // short curcuit (stops the loop)
       }
@@ -118,13 +125,23 @@ export class OrCondition<TFacts> extends Condition<TFacts> {
   }
 }
 
-// export class NotCondition<TFacts> extends Condition<TFacts> {
-//   constructor(private child: Condition<TFacts>) {
-//     super();
-//   }
-//
-//   evaluate(facts: TFacts): boolean {
-//     return !this.child.evaluate(facts)
-//   }
-// }
+export class NotCondition<TFacts> extends Condition<TFacts> {
+  constructor(public label: string, private child: Condition<TFacts>) {
+    super(label);
+  }
+
+  evaluate(facts: TFacts): boolean {
+    return !this.child.evaluate(facts)
+  }
+
+  explain(facts: TFacts): Trace {
+    const childTrace = this.child.explain(facts);
+    return {
+      kind: NodeKind.NOT,
+      label: this.label,
+      result: !childTrace.result,
+      children: childTrace,
+    };
+  }
+}
 
