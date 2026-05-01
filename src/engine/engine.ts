@@ -1,83 +1,60 @@
 import { Trace } from "../condition/condition";
 import { Rule } from "../rule/rule";
-import { Decision, Kind } from "./engine.types";
-
-type Options = {
-  trace: boolean
-}
+import { Decision, Kind, Options, Strategy } from "./engine.types";
 
 export class RuleEngine<TFacts> {
 
   evaluate(facts: TFacts, rules: Rule<TFacts>[], opts?: Options): Decision {
 
-    let result: Decision;
-
-    if (opts?.trace) {
-      result = this.evaluateWithTrace(facts, rules)
-    } else {
-      result = this.evaluateWithoutTrace(facts, rules)
-
-    }
-
-    return result;
-  }
-
-  private evaluateWithoutTrace(facts: TFacts, rules: Rule<TFacts>[]): Decision {
-    const passed: string[] = [];
-    const failed: string[] = [];
-
-    for (const rule of rules) {
-      if (!rule.condition.evaluate(facts)) {
-        failed.push(rule.name)
-        continue;
-      }
-
-      passed.push(rule.name)
-    }
-
-    const result: Decision = failed.length > 0 ? {
-      result: Kind.FAIL,
-      passed,
-      failed
-    } : {
-      result: Kind.PASS,
-      passed,
-    }
-
-    return result;
-  }
-
-  private evaluateWithTrace(facts: TFacts, rules: Rule<TFacts>[]): Decision {
     const passed: string[] = [];
     const failed: string[] = [];
     const traces: Trace[] = [];
 
     for (const rule of rules) {
 
-      const result = rule.condition.explain(facts)
-      traces.push(result);
+      const result = opts?.trace
+        ? rule.condition.explain(facts)
+        : { result: rule.condition.evaluate(facts) };
+
+      if (opts?.trace) traces.push(result as Trace);
 
       if (!result.result) {
         failed.push(rule.name)
-        continue;
+      } else {
+        passed.push(rule.name)
       }
 
-      passed.push(rule.name)
+      if (!opts?.strategy || opts?.strategy === "all") continue;
+
+      if (this.shouldStop(opts.strategy, passed, failed)) break;
+
     }
 
-    const result: Decision = failed.length > 0 ? {
-      result: Kind.FAIL,
+    let kind: Kind;
+    if (opts?.strategy === "anyPass") {
+      kind = passed.length > 0 ? Kind.PASS : Kind.FAIL;
+    } else {
+      // all or allPass
+      kind = failed.length === 0 ? Kind.PASS : Kind.FAIL;
+    }
+
+    const result: Decision = kind === Kind.FAIL ? {
+      result: kind,
       passed,
       failed,
-      trace: traces
+      trace: opts?.trace ? traces : undefined
     } : {
-      result: Kind.PASS,
+      result: kind,
       passed,
-      trace: traces
+      trace: opts?.trace ? traces : undefined
     }
 
     return result;
   }
+
+  private shouldStop(strat: Strategy, passed: string[], failed: string[]) {
+    if (strat === "allPass" && failed.length > 0) return true;
+    if (strat === "anyPass" && passed.length > 0) return true;
+    return false;
+  }
 }
-
-

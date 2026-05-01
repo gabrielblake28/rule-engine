@@ -36,3 +36,12 @@ interface FailWithoutTrace {
 type Fail = FailWithTrace | FailWithoutTrace
 
 export type Decision = Pass | Fail
+
+const strategy = ["all", "allPass", "anyPass"] as const;
+export type Strategy = typeof strategy[number];
+
+export type Options = {
+  trace: boolean
+  strategy: Strategy
+}
+
