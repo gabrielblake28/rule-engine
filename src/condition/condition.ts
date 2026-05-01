@@ -8,27 +8,27 @@ enum NodeKind {
 
 interface LeafTrace {
   kind: NodeKind.LEAF,
-  label: string,
+  label: string | undefined,
   result: boolean,
 }
 
 interface AndTrace {
   kind: NodeKind.AND,
-  label: string,
+  label: string | undefined,
   result: boolean,
   children: Trace[]
 }
 
 interface OrTrace {
   kind: NodeKind.OR,
-  label: string,
+  label: string | undefined,
   result: boolean,
   children: Trace[]
 }
 
 interface NotTrace {
   kind: NodeKind.NOT,
-  label: string,
+  label: string | undefined,
   result: boolean,
   children: Trace
 }
@@ -40,7 +40,7 @@ export abstract class Condition<TFacts> {
   abstract evaluate(facts: TFacts): boolean;
   abstract explain(facts: TFacts): Trace;
 
-  constructor(public label: string) { };
+  constructor(public label?: string) { };
 
   // and(other: Condition<TFacts>) { return new AndCondition(this.label, [this, other]); }
   // or(other: Condition<TFacts>) { return new OrCondition(this.label, [this, other]); }
@@ -69,7 +69,7 @@ export class PredicateCondition<TFacts> extends Condition<TFacts> {
 
 
 export class AndCondition<TFacts> extends Condition<TFacts> {
-  constructor(public label: string, private children: Condition<TFacts>[]) {
+  constructor(private children: Condition<TFacts>[], public label?: string) {
     super(label)
   }
 
@@ -98,7 +98,7 @@ export class AndCondition<TFacts> extends Condition<TFacts> {
 
 
 export class OrCondition<TFacts> extends Condition<TFacts> {
-  constructor(public label: string, private children: Condition<TFacts>[]) {
+  constructor(private children: Condition<TFacts>[], public label?: string) {
     super(label)
   }
 
@@ -126,7 +126,7 @@ export class OrCondition<TFacts> extends Condition<TFacts> {
 }
 
 export class NotCondition<TFacts> extends Condition<TFacts> {
-  constructor(public label: string, private child: Condition<TFacts>) {
+  constructor(private child: Condition<TFacts>, public label?: string) {
     super(label);
   }
 
